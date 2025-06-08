@@ -15,7 +15,7 @@ jobs:
   build-and-deploy:
     # 最新のUbuntu環境で実行
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: write
 
@@ -37,6 +37,13 @@ jobs:
       #    このステップで、Webページに必要な全ファイルが `static` ディレクトリに揃う
       - name: Build WASM
         run: wasm-pack build --target web --out-dir static/pkg
+
+      - name: List static directory contents
+        run: |
+          echo "Listing contents of ./static:"
+          ls -R static
+          echo "Current working directory:"
+          pwd
 
       # Create .nojekyll file
       - name: Create .nojekyll file
