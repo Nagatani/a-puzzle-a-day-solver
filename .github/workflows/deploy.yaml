@@ -3,49 +3,44 @@ name: Deploy to GitHub Pages
 
 # ワークフローが実行されるタイミングを定義
 on:
+  # mainブランチにプッシュされた時
   push:
     branches: [ main ]
+  # GitHubのActionsタブから手動で実行できるようにする
   workflow_dispatch:
 
-# デプロイの競合を避けるための設定
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
-
+# ジョブ（一連の処理）を定義
 jobs:
+  # ビルドとデプロイを行うジョブ
   build-and-deploy:
+    # 最新のUbuntu環境で実行
     runs-on: ubuntu-latest
 
-    # 【修正点1】ジョブが必要とする権限を明示的に設定
-    permissions:
-      contents: write
-
+    # ジョブ内のステップを定義
     steps:
+      # 1. リポジトリのコードをチェックアウトする
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 2. Rustの安定版ツールチェインをセットアップする
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-      
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      # 3. wasm-packをインストールする
       - name: Install wasm-pack
         run: cargo install wasm-pack
 
+      # 4. RustコードをWASMにビルドする（出力先は static/pkg）
+      #    このステップで、Webページに必要な全ファイルが `static` ディレクトリに揃う
       - name: Build WASM
         run: wasm-pack build --target web --out-dir static/pkg
 
+      # 5. `static` ディレクトリの内容を `gh-pages` ブランチにデプロイする
+      #    peaceiris/actions-gh-pages という便利なアクションを利用する
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
+          # デプロイに必要なトークン。GitHubが自動で提供してくれる
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          # デプロイするファイルが含まれているディレクトリを指定
           publish_dir: ./static
