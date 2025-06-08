@@ -1,0 +1,81 @@
+body {
+    font-family: sans-serif;
+    background-color: #f0f2f5;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+h1 {
+    text-align: center;
+    color: #0056b3;
+}
+.lead {
+    text-align: center;
+    font-size: 1.2em;
+    margin-bottom: 20px;
+}
+.controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+select, button {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+button {
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s;
+}
+button:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+}
+button:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+#status {
+    text-align: center;
+    font-size: 1.2em;
+    margin-bottom: 20px;
+    min-height: 1.5em;
+}
+#solutions-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+.solution-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 30px);
+    grid-template-rows: repeat(7, 30px);
+    border: 2px solid #555;
+    width: fit-content;
+    background-color: #ddd;
+}
+.cell {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
+    font-weight: bold;
+    color: white;
+    box-sizing: border-box; /* To include border in size */
+}
+.date-hole {
+    background-color: #333;
+}
