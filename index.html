@@ -3,44 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A-Puzzle-A-Day Solver</title>
+    <title>A-Puzzle-A-Day Solver (WASM)</title>
     <link rel="stylesheet" href="style.css">
-    <script src="solver.js" defer></script>
 </head>
 <body>
+    <h1>A-Puzzle-A-Day Solver</h1>
+    <div class="controls">
+        <label for="month">月:</label>
+        <select id="month"></select>
 
-    <main class="container">
-        <div class="column-left">
-            <div class="card">
-                <header>
-                    <h1>A-Puzzle-A-Day</h1>
-                    <p>一部の日付で見つけきれない場合もあります。</p>
-                </header>
+        <label for="day">日:</label>
+        <select id="day"></select>
 
-                <div class="controls-container">
-                    <div>
-                        <label for="month-select">月:</label>
-                        <select id="month-select"></select>
-                    </div>
-                    <div>
-                        <label for="day-select">日:</label>
-                        <select id="day-select"></select>
-                    </div>
-                    <div class="button-wrapper">
-                        <button id="solve-button">解答表示</button>
-                    </div>
-                </div>
-                <div id="status" class="status-container"></div>
-            </div>
-        </div>
+        <button id="solve-button">解を探索</button>
+    </div>
 
-        <div class="column-right">
-            <div class="card puzzle-container">
-                <div id="puzzle-board" class="puzzle-grid"></div>
-            </div>
-            <p id="no-solution" class="no-solution-text"></p>
-        </div>
-    </main>
+    <div id="status"></div>
+    <div id="solutions-container"></div>
 
+    <script src="index.js"></script>
 </body>
 </html>
