@@ -15,7 +15,7 @@ jobs:
   build-and-deploy:
     # 最新のUbuntu環境で実行
     runs-on: ubuntu-latest
-
+    
     permissions:
       contents: write
 
@@ -38,6 +38,7 @@ jobs:
       - name: Build WASM
         run: wasm-pack build --target web --out-dir static/pkg
 
+      # NEW STEP HERE
       - name: List static directory contents
         run: |
           echo "Listing contents of ./static:"
@@ -58,3 +59,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # デプロイするファイルが含まれているディレクトリを指定
           publish_dir: ./static
+          allow_empty_commit: true # Add this line
