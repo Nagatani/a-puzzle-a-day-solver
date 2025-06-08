@@ -38,6 +38,10 @@ jobs:
       - name: Build WASM
         run: wasm-pack build --target web --out-dir static/pkg
 
+      # Create .nojekyll file
+      - name: Create .nojekyll file
+        run: touch static/.nojekyll
+
       # 5. `static` ディレクトリの内容を `gh-pages` ブランチにデプロイする
       #    peaceiris/actions-gh-pages という便利なアクションを利用する
       - name: Deploy to GitHub Pages
