@@ -1,5 +1,5 @@
 // WASMモジュールをインポート
-import init, { solve_for_date } from '../pkg/solver.js';
+import init, { solve_for_date } from './pkg/solver.js';
 
 async function run() {
   await init();
