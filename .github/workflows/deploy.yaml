@@ -44,7 +44,7 @@ jobs:
 
       # remove gitignore file in pkg
       - name: remove gitignore file
-        run: rm pkg/.gitignore
+        run: rm static/pkg/.gitignore
 
 
       # 5. `static` ディレクトリの内容を `gh-pages` ブランチにデプロイする
