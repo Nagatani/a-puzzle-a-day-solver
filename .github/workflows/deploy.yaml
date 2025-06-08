@@ -15,6 +15,9 @@ jobs:
   build-and-deploy:
     # 最新のUbuntu環境で実行
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
 
     # ジョブ内のステップを定義
     steps:
