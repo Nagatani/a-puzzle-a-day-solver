@@ -12,6 +12,7 @@ use console_error_panic_hook;
 
 use std::collections::HashSet;
 
+
 // --- データ構造 ---
 
 /// JavaScript側に渡すための、 một つの解を表す構造体。
@@ -33,7 +34,6 @@ struct UnionFind {
     parents: Vec<i32>,
     n: usize,
 }
-
 impl UnionFind {
     /// n個の要素を持つUnion-Find木を初期化する。最初は全要素が別々のグループ。
     fn new(n: usize) -> Self { UnionFind { parents: vec![-1; n], n } }
@@ -47,7 +47,7 @@ impl UnionFind {
             root
         }
     }
-    
+
     /// 要素xとyが属するグループを統合する。
     fn union(&mut self, x: usize, y: usize) {
         let mut root_x = self.find(x);
@@ -61,21 +61,17 @@ impl UnionFind {
     }
     
     /// 要素xが属するグループのサイズ（要素数）を返す。
-    fn size(&mut self, x: usize) -> i32 {
-        let root = self.find(x); // 先に根を確定させる（可変借用をここで終える）
-        -self.parents[root]      // その後、根の情報を返す（不変借用）
-    }
-
+    fn size(&mut self, x: usize) -> i32 { let root = self.find(x); -self.parents[root] }
+    
     /// 全ての根をリストで返す。
     fn roots(&self) -> Vec<usize> { (0..self.n).filter(|&i| self.parents[i] < 0).collect() }
-    
+
     /// 要素xが属するグループの全メンバーをリストで返す。
     fn members(&mut self, x: usize) -> Vec<usize> {
         let root = self.find(x);
         (0..self.n).filter(|&i| self.find(i) == root).collect()
     }
 }
-
 
 // --- ピース操作 ---
 
@@ -121,9 +117,6 @@ fn get_unique_rotations(shape: &Vec<Vec<u8>>) -> Vec<Vec<Vec<u8>>> {
     unique_shapes
 }
 
-
-// --- コアアルゴリズム ---
-
 /// 2次元の盤面を64ビット整数（ビットマスク）に変換する。
 /// この変換により、非常に高速なビット演算が可能になる。
 /// - ピースが重なっているかの判定 → ビットごとのAND演算 (`&`)
@@ -138,6 +131,8 @@ fn board_to_bitmask(board: &Vec<Vec<u8>>) -> u64 {
     }
     mask
 }
+
+// --- コアアルゴリズム ---
 
 /// 枝刈り（Pruning）判定関数。盤面が手詰まりかどうかを調べる。
 fn judge_connected_component(board_mask: u64, is_size_6_piece_used: bool) -> bool {
@@ -203,6 +198,7 @@ fn find_solutions_recursive(
 
 /// WASMとしてJavaScriptに公開されるメイン関数。
 /// `#[wasm_bindgen]` アトリビュートにより、このRust関数がJavaScriptから直接呼び出せるようになる。
+#[wasm_bindgen]
 pub fn solve_for_date(month: u32, day: u32) -> Result<JsValue, JsValue> {
     // Rustがパニックした際に、ブラウザのコンソールにエラーを出力する設定
     console_error_panic_hook::set_once();
@@ -225,7 +221,10 @@ pub fn solve_for_date(month: u32, day: u32) -> Result<JsValue, JsValue> {
                     let mut is_valid = true;
                     for (i, row) in shape.iter().enumerate() {
                         for (j, &cell) in row.iter().enumerate() {
-                            if r + i >= 7 || c + j >= 7 { if cell == 1 { is_valid = false; } continue; };
+                            if r + i >= 7 || c + j >= 7 {
+                                if cell == 1 { is_valid = false; }
+                                continue;
+                            };
                             if cell == 1 { board[r + i][c + j] = 1; }
                         }
                     }
@@ -239,19 +238,27 @@ pub fn solve_for_date(month: u32, day: u32) -> Result<JsValue, JsValue> {
     // --- 盤面初期化フェーズ ---
     // 1. まず空の盤面(0)を用意
     let mut initial_board = vec![vec![0u8; 7]; 7];
+
     // 2. 常に固定の穴(1)をマーク
-    initial_board[0][6] = 1; initial_board[1][6] = 1;
-    initial_board[6][3] = 1; initial_board[6][4] = 1; initial_board[6][5] = 1; initial_board[6][6] = 1;
+    initial_board[0][6] = 1;
+    initial_board[1][6] = 1;
+    initial_board[6][3] = 1;
+    initial_board[6][4] = 1;
+    initial_board[6][5] = 1;
+    initial_board[6][6] = 1;
+
     // 3. 指定された月日の穴(1)をマーク
     let month_r = ((month - 1) / 6) as usize;
     let month_c = ((month - 1) % 6) as usize;
     initial_board[month_r][month_c] = 1;
+
     let day_r = ((day - 1) / 7 + 2) as usize;
     let day_c = ((day - 1) % 7) as usize;
     initial_board[day_r][day_c] = 1;
+    
     // 4. 正しい盤面のビットマスクを生成
     let initial_board_mask = board_to_bitmask(&initial_board);
-
+    
     // --- 探索実行フェーズ ---
     let mut found_raw_solutions = Vec::new();
     find_solutions_recursive(0, initial_board_mask, &mut Vec::new(), false, &all_piece_placements, size_6_piece_index, &mut found_raw_solutions);
