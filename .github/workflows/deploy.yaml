@@ -15,7 +15,7 @@ jobs:
   build-and-deploy:
     # 最新のUbuntu環境で実行
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: write
 
@@ -38,23 +38,21 @@ jobs:
       - name: Build WASM
         run: wasm-pack build --target web --out-dir static/pkg
 
-      # NEW STEP HERE
-      - name: List static directory contents
-        run: |
-          echo "Listing contents of ./static:"
-          ls -R static
-          echo "Current working directory:"
-          pwd
-
       # Create .nojekyll file
       - name: Create .nojekyll file
         run: touch static/.nojekyll
 
+      # remove gitignore file in pkg
+      - name: remove gitignore file
+        run: rm pkg/.gitignore
+
+
       # 5. `static` ディレクトリの内容を `gh-pages` ブランチにデプロイする
-      #    Deploy action changed to JamesIves
+      #    peaceiris/actions-gh-pages という便利なアクションを利用する
       - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4.6.0
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          branch: gh-pages # The branch the action should deploy to.
-          folder: static   # The folder the action should deploy.
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # デプロイに必要なトークン。GitHubが自動で提供してくれる
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # デプロイするファイルが含まれているディレクトリを指定
+          publish_dir: ./static
