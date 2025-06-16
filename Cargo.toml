@@ -1,7 +1,10 @@
 [package]
 name = "solver"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+description = "A WebAssembly solver for the a-puzzle-a-day game"
+license = "MIT"
+repository = "https://github.com/Nagatani/a-puzzle-a-day-solver"
 
 [lib]
 crate-type = ["cdylib"]
