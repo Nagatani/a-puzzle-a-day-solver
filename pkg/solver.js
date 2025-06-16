@@ -89,8 +89,8 @@ function takeFromExternrefTable0(idx) {
     return value;
 }
 /**
- * WASMとしてJavaScriptに公開されるメイン関数。
- * `#[wasm_bindgen]` アトリビュートにより、このRust関数がJavaScriptから直接呼び出せるようになる。
+ * WASMとしてJavaScriptに公開されるメイン関数
+ * `#[wasm_bindgen]` アトリビュートにより、このRust関数がJavaScriptから直接呼び出せるようになる
  * @param {number} month
  * @param {number} day
  * @returns {any}
