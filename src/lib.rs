@@ -1,13 +1,13 @@
-// Wasm-bindgenは、RustとJavaScript間の通信を容易にするための公式ツール。
-// preludeをインポートすることで、#[wasm_bindgen]などの主要な機能が使えるようになる。
+// Wasm-bindgenは、RustとJavaScript間の通信を容易にするための公式ツール
+// preludeをインポートすることで、#[wasm_bindgen]などの主要な機能が使えるようになる
 use wasm_bindgen::prelude::*;
 
-// SerdeはRustの強力なシリアライズ/デシリアライズフレームワーク。
-// ここでは、Rustのデータ構造（struct）をJavaScriptが理解できる形式（JSONのようなJsValue）に変換するために使う。
+// SerdeはRustの強力なシリアライズ/デシリアライズフレームワーク
+// ここでは、Rustのデータ構造（struct）をJavaScriptが理解できる形式（JSONのようなJsValue）に変換するために使う
 use serde::Serialize;
 
 // Rustのコードがパニック（実行時エラー）を起こした際に、
-// ブラウザの開発者コンソールに詳細なエラーメッセージを出力してくれる便利なデバッグツール。
+// ブラウザの開発者コンソールに詳細なエラーメッセージを出力してくれる便利なデバッグツール
 use console_error_panic_hook;
 
 use std::collections::HashSet;
@@ -15,31 +15,27 @@ use std::collections::HashSet;
 
 // --- データ構造 ---
 
-/// JavaScript側に渡すための、 một つの解を表す構造体。
-/// #[derive(Serialize)] を付けることで、この構造体をSerdeが自動的に
-/// シリアライズ（JsValueに変換）できるようになる。
+/// JavaScript側に渡すための解を表す構造体
+/// #[derive(Serialize)] を付けることで、この構造体をSerdeが自動的にJsValueに変換できるようになる
 #[derive(Serialize)]
 struct Solution {
-    /// ピースのID(1-8)で埋められた7x7の盤面。日付の穴は-1で表現。
+    /// ピースのID(1-8)で埋められた7x7の盤面 - 日付の穴は-1で表現
     board: Vec<Vec<i8>>,
 }
 
-/// Union-Find木（素集合データ構造）。
-/// 盤面上に残った空きマスが、連結したいくつかのグループ（島）を形成しているかを管理する。
-/// これは「枝刈り」と呼ばれる探索アルゴリズムの重要な最適化のために使用される。
-/// 例えば、空きマスが3マスだけの孤立した島になった場合、どのピース（最小5マス）でも
-/// 埋めることは不可能。このような手詰まりの盤面を早期に検出し、無駄な探索を打ち切ることで
-/// 計算量を劇的に削減する。
+/// Union-Find木（素集合データ構造）
+/// 盤面上に残った空きマスが、連結したいくつかのグループ（島）を形成しているかを管理する
+/// 探索アルゴリズムの重要な最適化のための枝刈りに使用される
 struct UnionFind {
     parents: Vec<i32>,
     n: usize,
 }
 impl UnionFind {
-    /// n個の要素を持つUnion-Find木を初期化する。最初は全要素が別々のグループ。
+    /// n個の要素を持つUnion-Find木を初期化する - 最初は全要素が別々のグループ
     fn new(n: usize) -> Self { UnionFind { parents: vec![-1; n], n } }
 
-    /// 要素xが属するグループの根（代表元）を見つける。
-    /// 途中で見つかった要素を直接根に繋ぎ直す「経路圧縮」という最適化を行っている。
+    /// 要素xが属するグループの根（代表元）を見つける
+    /// 途中で見つかった要素を直接根に繋ぎ直す「経路圧縮」という最適化を行っている
     fn find(&mut self, x: usize) -> usize {
         if self.parents[x] < 0 { x } else {
             let root = self.find(self.parents[x] as usize);
@@ -48,34 +44,29 @@ impl UnionFind {
         }
     }
 
-    /// 要素xとyが属するグループを統合する。
+    /// 要素xとyが属するグループを統合する
     fn union(&mut self, x: usize, y: usize) {
         let mut root_x = self.find(x);
         let mut root_y = self.find(y);
         if root_x != root_y {
-            // サイズが小さい方を大きい方に繋ぐことで、木の高さが偏らないようにする最適化。
+            // サイズが小さい方を大きい方に繋ぐことで、木の高さが偏らないようにする最適化
             if self.parents[root_x] > self.parents[root_y] { std::mem::swap(&mut root_x, &mut root_y); }
             self.parents[root_x] += self.parents[root_y];
             self.parents[root_y] = root_x as i32;
         }
     }
     
-    /// 要素xが属するグループのサイズ（要素数）を返す。
+    /// 要素xが属するグループのサイズ（要素数）を返す
     fn size(&mut self, x: usize) -> i32 { let root = self.find(x); -self.parents[root] }
     
-    /// 全ての根をリストで返す。
+    /// 全ての根をリストで返す
     fn roots(&self) -> Vec<usize> { (0..self.n).filter(|&i| self.parents[i] < 0).collect() }
 
-    /// 要素xが属するグループの全メンバーをリストで返す。
-    fn members(&mut self, x: usize) -> Vec<usize> {
-        let root = self.find(x);
-        (0..self.n).filter(|&i| self.find(i) == root).collect()
-    }
 }
 
 // --- ピース操作 ---
 
-/// 全8ピースの基本形状を定義する。
+/// 全8ピースの基本形状を定義する
 fn get_initial_pieces() -> Vec<Vec<Vec<u8>>> {
     vec![
         vec![vec![1, 1], vec![1, 1], vec![1, 1]],
@@ -89,7 +80,7 @@ fn get_initial_pieces() -> Vec<Vec<Vec<u8>>> {
     ]
 }
 
-/// ピースの形状データを回転・反転させる。
+/// ピースの形状データを回転・反転させる
 fn rotate_and_flip(shape: &Vec<Vec<u8>>, rot_type: u8) -> Vec<Vec<u8>> {
     let mut current_shape = shape.clone();
     // 4以上ならまず左右反転
@@ -107,7 +98,7 @@ fn rotate_and_flip(shape: &Vec<Vec<u8>>, rot_type: u8) -> Vec<Vec<u8>> {
     rotated
 }
 
-/// ピースの回転・反転から、重複しない形状パターンをすべて生成する。
+/// ピースの回転・反転から、重複しない形状パターンをすべて生成する
 fn get_unique_rotations(shape: &Vec<Vec<u8>>) -> Vec<Vec<Vec<u8>>> {
     let mut unique_shapes = Vec::new(); let mut seen = HashSet::new();
     for i in 0..8 {
@@ -117,11 +108,11 @@ fn get_unique_rotations(shape: &Vec<Vec<u8>>) -> Vec<Vec<Vec<u8>>> {
     unique_shapes
 }
 
-/// 2次元の盤面を64ビット整数（ビットマスク）に変換する。
-/// この変換により、非常に高速なビット演算が可能になる。
+/// 2次元の盤面を64ビット整数（ビットマスク）に変換する
+/// この変換により、非常に高速なビット演算が可能になる
 /// - ピースが重なっているかの判定 → ビットごとのAND演算 (`&`)
 /// - ピースを盤面に置く操作 → ビットごとのOR演算 (`|`)
-/// これらは2次元配列をループで操作するより桁違いに速い。
+/// これらは2次元配列をループで操作するより桁違いに速い
 fn board_to_bitmask(board: &Vec<Vec<u8>>) -> u64 {
     let mut mask = 0u64;
     for (i, row) in board.iter().enumerate() {
@@ -134,7 +125,7 @@ fn board_to_bitmask(board: &Vec<Vec<u8>>) -> u64 {
 
 // --- コアアルゴリズム ---
 
-/// 枝刈り（Pruning）判定関数。盤面が手詰まりかどうかを調べる。
+/// 枝刈り（Pruning）判定関数 - 盤面が手詰まりかどうかを調べる
 fn judge_connected_component(board_mask: u64, is_size_6_piece_used: bool) -> bool {
     let mut uf = UnionFind::new(49);
     // 空きマス(`0`)をUnion-Findでグループ分けする
@@ -161,7 +152,7 @@ fn judge_connected_component(board_mask: u64, is_size_6_piece_used: bool) -> boo
     true // 手詰まりではない
 }
 
-/// バックトラッキング（深さ優先探索）で全解法を探索する再帰関数。
+/// バックトラッキング（深さ優先探索）で全解法を探索する再帰関数
 /// 1. ピースを1つ置く
 /// 2. 盤面が妥当かチェック（枝刈り）
 /// 3. 妥当なら、次のピースのために自分自身を呼び出す（深く潜る）
@@ -196,16 +187,16 @@ fn find_solutions_recursive(
 }
 
 
-/// WASMとしてJavaScriptに公開されるメイン関数。
-/// `#[wasm_bindgen]` アトリビュートにより、このRust関数がJavaScriptから直接呼び出せるようになる。
+/// WASMとしてJavaScriptに公開されるメイン関数
+/// `#[wasm_bindgen]` アトリビュートにより、このRust関数がJavaScriptから直接呼び出せるようになる
 #[wasm_bindgen]
 pub fn solve_for_date(month: u32, day: u32) -> Result<JsValue, JsValue> {
     // Rustがパニックした際に、ブラウザのコンソールにエラーを出力する設定
     console_error_panic_hook::set_once();
 
     // --- 事前計算フェーズ ---
-    // 探索を始める前に、全ピースの全配置パターンを計算しておく。
-    // これにより、探索中の回転や重複チェックのコストをなくし、大幅に高速化する。
+    // 探索を始める前に、全ピースの全配置パターンを計算しておく
+    // これにより、探索中の回転や重複チェックのコストをなくし、大幅に高速化する
     let initial_pieces = get_initial_pieces();
     let piece_sizes: Vec<usize> = initial_pieces.iter().map(|p| p.iter().map(|r| r.iter().sum::<u8>() as usize).sum()).collect();
     let size_6_piece_index = piece_sizes.iter().position(|&s| s == 6).unwrap();
@@ -264,7 +255,7 @@ pub fn solve_for_date(month: u32, day: u32) -> Result<JsValue, JsValue> {
     find_solutions_recursive(0, initial_board_mask, &mut Vec::new(), false, &all_piece_placements, size_6_piece_index, &mut found_raw_solutions);
 
     // --- 結果の変換・返却フェーズ ---
-    // 探索結果（ビットマスクのリスト）を、JavaScriptが扱いやすい`Solution`構造体のリストに変換する。
+    // 探索結果（ビットマスクのリスト）を、JavaScriptが扱いやすい`Solution`構造体のリストに変換する
     let final_solutions: Vec<Solution> = found_raw_solutions.iter().map(|masks| {
         let mut board = vec![vec![0i8; 7]; 7];
         for (piece_id, &mask) in masks.iter().enumerate() {
@@ -281,8 +272,7 @@ pub fn solve_for_date(month: u32, day: u32) -> Result<JsValue, JsValue> {
         Solution { board }
     }).collect();
 
-    // `serde_wasm_bindgen`を使って、Rustの`Vec<Solution>`をJavaScriptの`JsValue`
-    // （実質的にはJavaScriptのオブジェクトの配列）にシリアライズして返す。
-    // `?`はシリアライズ中にエラーが発生した場合に、そのエラーをJavaScript側に送るための糖衣構文。
+    // `serde_wasm_bindgen`を使って、Rustの`Vec<Solution>`をJavaScriptの`JsValue`にシリアライズして返す
+    // `?`はシリアライズ中にエラーが発生した場合に、そのエラーをJavaScript側に送るための糖衣構文
     Ok(serde_wasm_bindgen::to_value(&final_solutions)?)
 }
